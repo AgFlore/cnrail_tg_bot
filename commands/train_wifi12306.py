@@ -74,11 +74,11 @@ def parse_compilation(train_no):
     '''
     Return sample:
     Compilation:
-    01(P1) KD    0
-    02(P1) YZ    118
-    03(P1) YZ    118
-    04(P1) YZ    112 D
-    05(P1) YW    66
+    01(非空) YZ    118
+    02(非空) YZ    118 A
+    03(非空) YZ    118
+    04(非空) YZ    118 A
+    05(非空) YZ    118
     '''
     train_compile = query_wifi12306.getTrainCompileListByTrainNo(train_no)
     if train_compile and (train_compile[0] != 'NO_DATA'):
@@ -86,11 +86,16 @@ def parse_compilation(train_no):
         for one_train in train_compile:
             comment = one_train.get('commentCode')
             comment_str = query_wifi12306.compile_comment_dict.get(comment, comment)
+            air_conditioned = one_train.get('seatFeature')
+            seat_feature_str = query_wifi12306.seat_feature_dict.get(air_conditioned, air_conditioned)
+            limit_str = str(one_train.get('limit1'))
+            if one_train.get('limit2'):
+                limit_str += '/' + str(one_train.get('limit2'))
             result_str += "{}({}) {}{} {}\n".format(
                 one_train.get('coachNo'),
-                one_train.get('origin'),
+                seat_feature_str,
                 one_train.get('coachType'),
-                str(one_train.get('limit1')).ljust(3),
+                limit_str.ljust(3),
                 comment_str)
         return result_str
     return ""

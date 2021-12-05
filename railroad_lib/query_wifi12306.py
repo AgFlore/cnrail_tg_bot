@@ -87,16 +87,54 @@ def getTrainCompileListByTrainNo(trainNo) -> list:
     response = requests.get("https://wifi.12306.cn/wifiapps/ticket/api/trainDetailInfo/queryTrainCompileListByTrainNo?trainNo=%s"%trainNo, headers=header)
     return json_parser(response.content.decode('utf-8'))
 
+# For interpreting the "seatFeature"
+seat_feature_dict = {
+    '0': '非空',
+    '3': '新空',
+}
+
+coach_type_dict = {
+    'CA': '餐车',
+    'FD': '发电车',
+    'GR': '高级软卧车',
+    'KD': '空调发电车',
+    'PC': '棚车',
+    'RW': '软卧车',
+    'RYW': '软硬卧车',
+    'RYZ': '软硬座车',
+    'RZ': '软座车',
+    'RZ1': '一等软座车',
+    'RZ2': '二等软座车',
+    'SRW': '双层软卧车',
+    'SRZ': '双层软座车',
+    'SYW': '双层硬卧车',
+    'SYZ': '双层硬座车',
+    'UZ': '邮政车',
+    'XL': '行李车',
+    'XU': '行邮车',
+    'YW': '硬卧车',
+    'YZ': '硬座车',
+    'RZXL': '软座行李',
+    'RZBB': '一等半包',
+    'JYYZ': '简易硬座',
+}
+
 # For interpreting the "commentCode"
 # TBA:
-# 'E' appeared once in 26000K77520E (YW25G, capacity=66)
+# 'A' appeared in 280000818702 and 270000881707 (YZ25B, capacity=116).
+# 'F' appeared in 280000818702 and 270000881707 (YZ25B, capacity=106).
 # 'J' appeared once in 12000K12270V (YZ25G, capacity=108)
+# 'M' appeared in 4a000070051A (CA, capacity=0), 410000700312 (YW25G, capacity=36)
+# '.' appeared in 43000K82210K (YW25G, capacity=66)
+# '0' appeared once in 190000K4300S (YZ25G, capacity=118)
 compile_comment_dict = {
     'B': '㊙️宿营车',
     'C': '🎙️带广播室',
     'D': '👮‍♀️带列车长办公席',
+    'E': '㊙️🎙️宿营车带广播室',
     'H': '➡️联运出境',
     'I': '↩️回转',
+    'K': '👮‍♀️🎙️广播室+列车长办公席',
     'L': '❌欠编',
     'N': '♿️无障碍',
     'O': '🎙️♿️无障碍+广播室',
