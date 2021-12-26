@@ -122,11 +122,34 @@ def parse_runrule(train_no, origin_date):
         return result_str
     return ""
 
+def parse_preseq(train_code, query_date):
+    preseq = query_wifi12306.queryPreseqTrainsByTrainCode(train_code, query_date)
+    if preseq and (preseq[0] != 'NO_DATA'):
+        train_date = ''
+        result_str = "Inbound Tracking: \n"
+        for one_train in preseq:
+            if one_train.setdefault('trainDate', '') != train_date:
+                train_date = one_train.get('trainDate')
+                result_str += "           (%s)\n"%(train_date)
+            result_str += "({}){}-({}){} {}".format(
+                one_train.get('startStationTelecode'),
+                one_train.get('startTime'),
+                one_train.get('endStationTelecode'),
+                one_train.get('endTime'),
+                one_train.get('trainCode'),
+            )
+            if one_train.get('trainStatus') != '0':
+                result_str += " %s"%(one_train.get('trainDescripe'))
+            result_str += "\n"
+        result_str += "\n"
+        return result_str
+    return ""
+
 def parse_equipment(train_no):
     train_equipment = query_wifi12306.getTrainEquipmentByTrainNo(train_no)
     if train_equipment and (train_equipment[0] != 'NO_DATA'):
         result_str = "Equipment: \n"
-        result_str += "%s\n"%(train_equipment)
+        result_str += "%s\n\n"%(train_equipment)
         return result_str
     return ""
 
@@ -161,15 +184,17 @@ def train_wifi(update, context):
             tasks = [future.result() for future in [
                 executor.submit(parse_runrule, train_no, datetime.strptime(date, "%Y%m%d")),
                 executor.submit(parse_compilation, train_no),
-                executor.submit(parse_equipment, train_no)]]
-        result_str += "\n<pre>%s</pre><pre>%s</pre><pre>%s (%s - %s)\n%s</pre>\n<pre>%s</pre>"%(
+                executor.submit(parse_equipment, train_no),
+                executor.submit(parse_preseq, train_code, date)]]
+        result_str += "\n<pre>%s</pre><pre>%s</pre><pre>%s (%s - %s)\n%s</pre>\n<pre>%s</pre><pre>%s</pre>"%(
             tasks[0],
             parse_guide(train_data),
             train_no,
             train_data[0].get('startDate'),
             train_data[0].get('stopDate'),
             tasks[1],
-            tasks[2]
+            tasks[2],
+            tasks[3],
             )
 
         # Edit message, replace placeholder
