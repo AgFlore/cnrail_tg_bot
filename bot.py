@@ -13,3 +13,4 @@ for handler in commands.handlers:
     updater.dispatcher.add_handler(handler)
 
 updater.start_polling()
+updater.idle()
