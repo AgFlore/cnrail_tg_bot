@@ -7,6 +7,7 @@ from . import basics, timetable, train_plan_graph, history, train_wifi12306, pid
 handlers = [
     basics.start_handler,
     timetable.timetable_handler,
+    timetable.timetable_shj_handler,
     train_plan_graph.graph_handler,
     history.train_info_handler,
     history.train_no_handler,

@@ -3,7 +3,7 @@
 # By waymao in 2019
 
 from telegram.ext import Updater, CommandHandler, CallbackQueryHandler
-from railroad_lib import query12306
+from railroad_lib import query12306, query_railshj
 from telegram import ReplyKeyboardRemove
 from telegram.ext.dispatcher import run_async
 import requests, json
@@ -20,7 +20,7 @@ tz = pytz.timezone('Asia/Shanghai')
 
 # function timetable
 # main handler for the command.
-def timetable(update, context):
+def timetable_unifier(update, context, source="12306"):
     # Check valid args:
     if len(context.args) == 0:
         # calendar_func(bot, update)
@@ -47,7 +47,10 @@ def timetable(update, context):
 
     try:
         # Calling lfz's code
-        train_data = query12306.getTimeList(train, date)
+        if source == "railshj":
+            train_data = query_railshj.get_train_detail(date, train)
+        else:
+            train_data = query12306.getTimeList(train, date)
 
         # First line
         result_str = "{} {}\t {} {}".format(
@@ -96,5 +99,12 @@ def timetable(update, context):
     # Logs down each query.
     logging.info("User {} (id: {}) searched for train {}".format(update.message.from_user.username, update.message.from_user.id, train))
 
+def timetable(update, context):
+    return timetable_unifier(update, context, source="12306")
+
+def timetable_shj(update, context):
+    return timetable_unifier(update, context, source="railshj")
+
 # Add handler for the functions.
 timetable_handler = CommandHandler('tt', timetable, pass_args=True, run_async=True)
+timetable_shj_handler = CommandHandler('tts', timetable, pass_args=True, run_async=True)
