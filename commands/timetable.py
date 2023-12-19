@@ -89,7 +89,7 @@ def timetable_unifier(update, context, source="12306"):
         if status_code == 404:
             # a guess
             context.bot.edit_message_text(chat_id=update.message.chat_id,
-                text="Sorry, there is no such train no or the train does not run this day.",
+                text="Sorry, there is no such train no or the train does not run this day. (response code 404)",
                 message_id=msg.message_id)
         else:
             context.bot.edit_message_text(chat_id=update.message.chat_id,
@@ -107,4 +107,4 @@ def timetable_shj(update, context):
 
 # Add handler for the functions.
 timetable_handler = CommandHandler('tt', timetable, pass_args=True, run_async=True)
-timetable_shj_handler = CommandHandler('tts', timetable, pass_args=True, run_async=True)
+timetable_shj_handler = CommandHandler('tts', timetable_shj, pass_args=True, run_async=True)
