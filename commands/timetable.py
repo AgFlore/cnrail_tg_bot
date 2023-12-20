@@ -57,7 +57,9 @@ def timetable_unifier(update, context, source="12306"):
 
         # First line
         result_str = "<pre>"
-        if (train_class_name := train_data[0].get("train_class_name")):
+
+        train_class_name = train_data[0].get("train_class_name")
+        if train_class_name:
             result_str += f"{train_class_name} "
 
         result_str += "{}\t{} ".format(
@@ -65,15 +67,19 @@ def timetable_unifier(update, context, source="12306"):
             query_railshj.date_to_string(date),
         )
 
-        if (running_time := train_data[-1].get("running_time")):
+        running_time = train_data[-1].get("running_time")
+        if running_time:
             result_str += f"(全程 {running_time}) "
-        if (arrive_day_str := train_data[0].get("arrive_day_str")):
+        arrive_day_str = train_data[0].get("arrive_day_str")
+        if arrive_day_str:
             result_str += f"{arrive_day_str} "
 
         # detailed timetable
         for one_station in train_data:
             result_str += "\n"
-            if (station_no := one_station.get("station_no")):
+
+            station_no = one_station.get("station_no")
+            if station_no:
                 result_str += "{} ".format(station_no)
 
             result_str += "{} \t {} \t {} {}".format(
