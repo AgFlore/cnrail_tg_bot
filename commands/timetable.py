@@ -4,10 +4,9 @@
 
 from telegram.ext import Updater, CommandHandler, CallbackQueryHandler
 from railroad_lib import query12306, query_railshj
-from telegram import ReplyKeyboardRemove
+from telegram import ParseMode
 from telegram.ext.dispatcher import run_async
 import requests, json
-import re
 import logging
 import pytz
 from datetime import datetime
@@ -32,7 +31,7 @@ def timetable_unifier(update, context, source="12306"):
         date = datetime.now(tz).strftime("%Y-%m-%d")
     elif len(context.args) != 2:
         context.bot.send_message(chat_id=update.message.chat_id,
-            text="Invalid arguments. Usage: /tt <Train Number>",
+            text="Invalid arguments. Usage: `/tt <Train Number> (Date)`",
             reply_to_message_id=update.message.message_id)
         return
     else:
@@ -52,25 +51,41 @@ def timetable_unifier(update, context, source="12306"):
         else:
             train_data = query12306.getTimeList(train, date)
 
+        # If no data returned, raise KeyError
+        if not train_data:
+            raise KeyError
+
         # First line
-        result_str = "{} {}\t {} {}".format(
-            train_data[0]["train_class_name"],
-            train_data[0]['station_train_code'],
-            date,
-            train_data[-1]["arrive_day_str"]
+        result_str = "<pre>"
+        if (train_class_name := train_data[0].get("train_class_name")):
+            result_str += f"{train_class_name} "
+
+        result_str += "{}\t{} ".format(
+            train_data[0].get("station_train_code"),
+            query_railshj.date_to_string(date),
         )
+
+        if (running_time := train_data[-1].get("running_time")):
+            result_str += f"(全程 {running_time}) "
+        if (arrive_day_str := train_data[0].get("arrive_day_str")):
+            result_str += f"{arrive_day_str} "
 
         # detailed timetable
         for one_station in train_data:
             result_str += "\n"
-            result_str += "{} \t {} \t {}".format(
-                one_station["station_name"].ljust(10),
-                one_station["arrive_time"],
-                one_station["start_time"]
+            if (station_no := one_station.get("station_no")):
+                result_str += "{} ".format(station_no)
+
+            result_str += "{} \t {} \t {} {}".format(
+                one_station.get("station_name").ljust(4, '　'),
+                one_station.get("arrive_time"),
+                one_station.get("start_time"),
+                one_station.get("station_train_code"),
             )
 
         # Edit message, replace placeholder
-        context.bot.edit_message_text(chat_id=update.message.chat_id, text=result_str, message_id=msg.message_id)
+        result_str += "</pre>"
+        context.bot.edit_message_text(chat_id=update.message.chat_id, text=result_str, message_id=msg.message_id, parse_mode=ParseMode.HTML)
 
     # Error Handling.
     # KeyError: somehow 12306 returned something with status code != 200
@@ -93,11 +108,11 @@ def timetable_unifier(update, context, source="12306"):
                 message_id=msg.message_id)
         else:
             context.bot.edit_message_text(chat_id=update.message.chat_id,
-                text="Sorry. Could not establish a connection to the 12306 server.",
+                text=f"Sorry. Could not establish a connection to the 12306 server. status code: {status_code}",
                 message_id=msg.message_id)
 
     # Logs down each query.
-    logging.info("User {} (id: {}) searched for train {}".format(update.message.from_user.username, update.message.from_user.id, train))
+    logging.info("User %s (id: %d) searched for train %s", update.message.from_user.username, update.message.from_user.id, train)
 
 def timetable(update, context):
     return timetable_unifier(update, context, source="12306")
