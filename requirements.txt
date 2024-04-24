@@ -4,3 +4,4 @@ pymysql
 prettytable
 pytz
 python-dateutil
+pycryptodome
