@@ -27,26 +27,24 @@ def date_to_int(date_input):
     return int(dateutil.parser.parse(date_input).strftime("%Y%m%d"))
 
 
-def JSONify(data: dict):
-    return json.dumps(data, separators=(',', ':'))
+def b64_JSONify(data: dict):
+    return base64.b64encode(json.dumps(data, separators=(',', ':')).encode('utf-8'))
+
+
+def signext(x: bytes):
+    return SHA1.new(MD5.new(x).hexdigest().encode()).hexdigest()[6:26]
 
 
 def request_shj(data: dict, endpoint: str):
     data_sorted = dict(sorted(data.items()))
-    data_to_sign = base64.b64encode(JSONify(data_sorted).encode('utf-8'))
-
-    signext = SHA1.new(MD5.new(data_to_sign).hexdigest().encode('utf-8')
-                       ).hexdigest()[6:26]
-    timestampext = int(time.time() * 1000)
 
     payload = {
-        'signext': signext,
-        'timestampext': timestampext,
+        'signext': signext(b64_JSONify(data_sorted)),
+        'timestampext': int(time.time() * 1000),
         **data_sorted,
     }
 
-    encoded_payload = base64.b64encode(JSONify(payload).encode('utf-8'))
-    encrypted_payload = cipher.encrypt(pad(encoded_payload, AES.block_size))
+    encrypted_payload = cipher.encrypt(pad(b64_JSONify(payload), AES.block_size))
 
     response = requests.post(
         url="https://jk.railshj.com/12306app" + endpoint,
@@ -56,8 +54,8 @@ def request_shj(data: dict, endpoint: str):
     if response['returnCode'] == '200' and response["success"]:
         answer = base64.b64decode(response["data"])
         answer_decrypted = unpad(cipher.decrypt(bytes.fromhex(answer.decode())), AES.block_size)
+        return json.loads(answer_decrypted.decode('utf-8'))
 
-        return json.loads(answer_decrypted.decode('utf-8').strip())
     else:
         # record error
         return None
@@ -128,7 +126,11 @@ def test_module(label, response, answer):
 
 
 if __name__ == '__main__':
-    test_module("getTrainDetail", get_train_detail("20181001", "Z37"), [
-        {'arrive_day_str': None, 'station_name': '北京西', 'train_class_name': None, 'is_start': None, 'service_type': None, 'end_station_name': '武昌', 'arrive_time': '20:46', 'start_station_name': '北京西', 'station_train_code': 'Z37', 'arrive_day_diff': '1', 'start_time': '20:46', 'station_no': None, 'wz_num': None, 'running_time': '00:00'},
-        {'arrive_day_str': None, 'station_name': '武昌', 'train_class_name': None, 'is_start': None, 'service_type': None, 'end_station_name': None, 'arrive_time': '07:24', 'start_station_name': None, 'station_train_code': 'Z37', 'arrive_day_diff': None, 'start_time': '07:24', 'station_no': None, 'wz_num': None, 'running_time': '10:38'}
+
+    test_module("getTrainDetail", get_train_detail("20220101", "Z38"), [
+        {'start_station_name': '武昌', 'end_station_name': '北京西', 'arrive_day_diff': '1',
+
+         'station_name': '武昌', 'station_train_code': 'Z38', 'arrive_time': '19:46', 'start_time': '19:46', 'running_time': '00:00'},
+        {'station_name': '孝感', 'station_train_code': 'Z38', 'arrive_time': '20:40', 'start_time': '20:45', 'running_time': '0:54'},
+        {'station_name': '北京西', 'station_train_code': 'Z38', 'arrive_time': '06:43', 'start_time': '06:43', 'running_time': '10:57'}
     ])
