@@ -1,6 +1,8 @@
 # query_railshj.py
 # looks for timetable on jk.railshj.com
 
+import os
+import logging
 import json
 import base64
 import time
@@ -17,6 +19,8 @@ headers = {
     'version': 'WX-APPLET_1.3.15',
     'User-Agent': 'MicroMessenger XWEB/9115',
 }
+
+BASE_URL = os.environ.get('RAILSHJ_ENDPOINT', 'https://jk.railshj.com/12306app')
 
 
 def date_to_string(date_input):
@@ -46,11 +50,18 @@ def request_shj(data: dict, endpoint: str):
 
     encrypted_payload = cipher.encrypt(pad(b64_JSONify(payload), AES.block_size))
 
-    response = requests.post(
-        url="https://jk.railshj.com/12306app" + endpoint,
+    request = requests.post(
+        url=BASE_URL + endpoint,
         json={'data': base64.b64encode(encrypted_payload).decode('utf-8')},
         timeout=10, headers=headers
-    ).json()
+    )
+    try:
+        response = request.json()
+    except json.JSONDecodeError:
+        logging.error("Railshj: HTTP %s. Error decoding JSON response: %s",
+                      request.status_code, request.text)
+        return None
+
     if response['returnCode'] == '200' and response["success"]:
         answer = base64.b64decode(response["data"])
         answer_decrypted = unpad(cipher.decrypt(bytes.fromhex(answer.decode())), AES.block_size)
