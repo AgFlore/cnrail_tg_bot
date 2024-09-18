@@ -48,8 +48,14 @@ def timetable_unifier(update, context, source="12306"):
         # Calling lfz's code
         if source == "railshj":
             train_data = query_railshj.get_train_detail(date, train)
+            train_no = train_data[0].get("station_train_code")
         else:
-            train_data = query12306.getTimeList(train, date)
+            if len(train) > 10:
+                train_no = train
+            else:
+                _train_no_list = query12306.getTrainNo(train, query_railshj.date_to_int(date))
+                train_no = _train_no_list[0].get("train_no")
+            train_data = query12306.getTimeList(train_no, date)
 
         # If no data returned, raise KeyError
         if not train_data:
@@ -63,7 +69,7 @@ def timetable_unifier(update, context, source="12306"):
             result_str += f"{train_class_name} "
 
         result_str += "{}\t{} ".format(
-            train_data[0].get("station_train_code"),
+            train_no,
             query_railshj.date_to_string(date),
         )
 

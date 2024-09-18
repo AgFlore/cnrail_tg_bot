@@ -23,8 +23,12 @@ def getTrainList(queryDate,from_station,to_station,purpose_codes="ADULT") -> lis
         return {}
     return data
 
+def getTrainNo(train_code, date: int):
+    return requests.get(f'https://search.12306.cn/search/v1/train/search?keyword={train_code}&date={date}').json()['data']
+
+
 def getTimeList(train_no,train_date)-> list:
-    response  = requests.get("https://kyfw.12306.cn/kfzmpt/queryTrainInfo/query?leftTicketDTO.train_no=%s&leftTicketDTO.train_date=%s&rand_code="%(train_no,train_date), headers=header)
+    response  = requests.get("https://kyfw.12306.cn/otn/queryTrainInfo/query?leftTicketDTO.train_no=%s&leftTicketDTO.train_date=%s&rand_code="%(train_no,train_date), headers=header)
     text = response.content.decode('utf-8')
     rawData=text[text.find("{\"arriv")-1:text.find("},\"messages")]
     data = json.loads(rawData)
@@ -70,8 +74,8 @@ if __name__ == '__main__':
     print()
     '''
 
-    date = "2019-07-14"
-    train="G1603"
+    date = "2024-09-01"
+    train="24000000G10K"
     traindata = getTimeList(train,date)
     print(traindata[0]["train_class_name"]+" "+traindata[0]['station_train_code']+"\t"+""+date+" "+traindata[-1]["arrive_day_str"])
 
