@@ -12,31 +12,10 @@ from railroad_lib import query_wifi12306
 # Setting appropiate timezone.
 tz = pytz.timezone('Asia/Shanghai')
 
-def parse_timetable_line(one_train):
-    line = "`%s`" %(one_train.get('trainCode', one_train.get('trainNo', '?')))
-    if 'startStationName' in one_train and 'endStationName' in one_train:
-        line += "`(%s-%s)`" % (one_train['startStationName'], one_train['endStationName'])
-    arrive_time = one_train.get('arriveTime', '-')
-    depart_time = one_train.get('departTime', '-')
-    if arrive_time == depart_time:
-        line += " `%s`" % arrive_time
-    else:
-        line += " `%s/%s`" % (arrive_time, depart_time)
-    line += "\n"
-    return line
-
-def parse_timetable(station_code, date):
-    station_table = query_wifi12306.queryStoptimeByStationCode(station_code, date)
-    if station_table and (station_table[0] != "NO_DATA"):
-        result_str = "Timetable: \n"
-        station_table.sort(key=lambda one_train:one_train.get('departTime'))
-        for one_train in station_table:
-            result_str += parse_timetable_line(one_train)
-        return result_str
-    return ""
 
 def timestamp_to_clock(timestamp):
     return datetime.fromtimestamp(timestamp/1000, tz=tz)
+
 
 def parse_screen_line(line, ignore_ok=""):
     # The timestamp returned. Note that this is not necessarily the timestamp scheduled in the timetable.
@@ -67,6 +46,7 @@ def parse_screen_line(line, ignore_ok=""):
         train_time, status_str)
     return result_str
 
+
 def parse_screen(station_code, date, flag):
     flag_parser = {'D':('D','Departures',''), 'd':('D', 'Departures', 'D'), 'A':('A', 'Arrivals', ''), 'a':('A', 'Arrivals','A')}
     DA_type, da_string, ignore_ok = flag_parser.get(flag)
@@ -84,6 +64,7 @@ def parse_screen(station_code, date, flag):
         result_str += "\nUpdated at %s</pre>" % timestamp_to_clock(screen[0].get('updateTime'))
         return result_str
     return "No data were returned for your query."
+
 
 def station_realtime(update, context):
     # Check valid args:

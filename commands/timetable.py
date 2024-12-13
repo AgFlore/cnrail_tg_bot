@@ -101,7 +101,7 @@ def timetable_unifier(update, context, source="12306"):
 
     # Error Handling.
     # KeyError: somehow 12306 returned something with status code != 200
-    except (KeyError, json.JSONDecodeError):
+    except (KeyError, IndexError, json.JSONDecodeError):
         context.bot.edit_message_text(chat_id=update.message.chat_id,
             text="Sorry, there is no such train no or the train does not run this day.",
             message_id=msg.message_id)
